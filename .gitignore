@@ -1,0 +1,5 @@
+# project settings
+.vscode/
+
+# temporary files
+.ipynb_checkpoints/
