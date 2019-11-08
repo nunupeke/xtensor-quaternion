@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include "xtensor/xadapt.hpp"
 #include "xtensor/xoffset_view.hpp"
 
 namespace xt
@@ -94,6 +95,31 @@ namespace xt
     }
 
     #define offset_view(X, N) offset_view_impl<offsetof(typename decltype(X)::value_type, N)>(X)
+
+    // view an n-d xcontainer of quaternions as a "plain" (n+1)-d xcontainer
+    // (the last dimension of the returned view will be 4)
+    template <class E>
+    auto raw_view(E&& in) {
+        using value_type = typename std::decay_t<E>::value_type::value_type;
+        auto shape = in.shape();
+        std::vector<std::size_t> vshape(shape.begin(), shape.end());
+        vshape.push_back(4);
+        return xt::adapt(reinterpret_cast<value_type*>(in.data()),
+                         in.size()*4, xt::no_ownership(), vshape);
+    }
+
+    // view an n-d xcontainer as an (n-1)-d xcontainer of quaternions
+    // (the last dimension of the input container must be 4)
+    template <class E>
+    auto quat_view(E&& in) {
+        using value_type = typename std::decay_t<E>::value_type;
+        auto shape = in.shape();
+        std::vector<std::size_t> vshape(shape.begin(), shape.end());
+        assert(vshape.back() == 4);
+        vshape.pop_back();
+        return xt::adapt(reinterpret_cast<xt::quaternion<value_type>*>(in.data()),
+                         in.size()/4, xt::no_ownership(), vshape);
+    }
 
     namespace math
     {
